@@ -1,7 +1,7 @@
 'use client';
 
 import type { Attachment, Message } from 'ai';
-import { useChat } from 'ai/react';
+import { useAssistant } from '@vercel/ai-sdk';
 import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
@@ -29,6 +29,10 @@ export function Chat({
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const assistant = useAssistant({
+    model: selectedModelId, // Use the selected model ID
+    apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is set in the environment variables
+  });
 
   const {
     messages,
@@ -58,6 +62,11 @@ export function Chat({
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
 
+  const handleSendMessage = async (message: string) => {
+    const response = await assistant.sendMessage(message);
+    console.log(response); // Handle the response
+  };
+
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
@@ -79,13 +88,13 @@ export function Chat({
           isBlockVisible={isBlockVisible}
         />
 
-        <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+        <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl" onSubmit={(e) => { e.preventDefault(); handleSendMessage(input); }}>
           {!isReadonly && (
             <MultimodalInput
               chatId={id}
               input={input}
               setInput={setInput}
-              handleSubmit={handleSubmit}
+              handleSubmit={handleSendMessage}
               isLoading={isLoading}
               stop={stop}
               attachments={attachments}
@@ -102,7 +111,7 @@ export function Chat({
         chatId={id}
         input={input}
         setInput={setInput}
-        handleSubmit={handleSubmit}
+        handleSubmit={handleSendMessage}
         isLoading={isLoading}
         stop={stop}
         attachments={attachments}
